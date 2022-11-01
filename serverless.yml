@@ -1,0 +1,14 @@
+service: aws-serverless-api-image-analysis
+frameworkVersion: '3'
+
+provider:
+  name: aws
+  runtime: nodejs14.x
+
+functions:
+  img-analysis:
+    handler: handler.main
+    events:
+      - httpApi:
+          path: /analyse
+          method: get
