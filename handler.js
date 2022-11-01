@@ -1,6 +1,6 @@
 'use strict';
 
-const { promises: { readFile } } = require('fs');
+const { get } = require("axios");
 
 class Handler {
 
@@ -39,31 +39,40 @@ class Handler {
     return TranslatedText.split(' e ');
   }
 
-  formatTextResults(texts, workingItems){
-    const finalText = [];
+  formatTextResults(texts, workingItems) {
+    let finalText = "";
     for (const indexText in texts) {
       const nameInPortuguese = texts[indexText];
       const confidence = workingItems[indexText].Confidence;
-
-      finalText.push(
-        `${confidence.toFixed(2)}% de ser do tipo ${nameInPortuguese}\n`
-      )  
+      finalText += `${confidence.toFixed(2)}% de ser do tipo ${nameInPortuguese}\n`
     }
 
     return finalText;
   };
+
+  async getImageBuffer(imageUrl) {
+    const response = await get(imageUrl, {
+      responseType: 'arraybuffer',
+    })
+    const buffer = Buffer.from(response.data, 'base64');
+
+    return buffer;
+  }
   async main(event) {
     try {
-      const imgBuffer = await readFile('./images/cat.jpg');
+      const { imageUrl } = event.queryStringParameters;
+      console.log('Downloading image...');
+      const buffer = await this.getImageBuffer(imageUrl);
       console.log('Detecting labels...');
-      const { names, workingItems } = await this.detectImageLabels(imgBuffer);
+      const { names, workingItems } = await this.detectImageLabels(buffer);
       console.log('Translating to Portuguese...');
       const texts = await this.TranslateText(names);
       console.log('handling final object...');
-      const response = this.formatTextResults(texts, workingItems);
+      const finalText = this.formatTextResults(texts, workingItems);
+
       return {
         statusCode: 200,
-        body: 'A imagem tem ' + response
+        body: `A imagem tem:\n`.concat(finalText)
       }
 
     } catch (error) {
