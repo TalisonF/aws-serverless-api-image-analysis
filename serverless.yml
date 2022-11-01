@@ -22,3 +22,6 @@ functions:
       - httpApi:
           path: /analyse
           method: get
+
+plugins:
+  - serverless-offline
